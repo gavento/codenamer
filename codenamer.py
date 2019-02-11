@@ -17,6 +17,8 @@ class Codenamer:
 
     def map_words(self, words):
         "return L2-normalized word vectors as ndarray"
+        if not words:
+            return np.zeros((0, self.dim))
         a = np.array([self.model.get_word_vector(w) for w in words])
         return a / np.linalg.norm(a, axis=1).reshape(-1, 1)
 
@@ -50,7 +52,7 @@ class Codenamer:
         t0 = time.time()
         cands = self.get_ranked_candidates(wanted_words, other_words, avoid_words)
         t1 = time.time()
-        cand_descs = ["{:6.2g} {:15s} ({:2} matches: {}) [{}]".format(s, w, len(m), ' '.join(m), wm) for s, m, wm, w in cands[:top]]
+        cand_descs = ["{:6.2g} {:15s} ({:2} matches: {}) [{}]".format(s, w, len(ms), ' '.join(wanted_words[mi] for mi in ms), wm) for s, ms, wm, w in cands[:top]]
         return """Input: 
             + wanted: {}
             - other: {}
