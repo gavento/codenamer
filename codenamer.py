@@ -16,21 +16,33 @@ class Codenamer:
         self.words_vecs = self.map_words(self.words)
 
     def map_words(self, words):
-        return np.array([self.model.get_word_vector(w) for w in words])
+        "return L2-normalized word vectors as ndarray"
+        a = np.array([self.model.get_word_vector(w) for w in words])
+        return a / np.linalg.norm(a, axis=1).reshape(-1, 1)
 
     def candidate_score(self, word_vec, wanted_vecs, other_vecs, avoid_vecs):
-        "return (score, matched_words)"
-        return (0.0, []) # TODO
+        "return (score, matched_indices)"
+        wanted_cos = wanted_vecs.dot(word_vec)
+        other_cos = other_vecs.dot(word_vec)
+        avoid_cos = avoid_vecs.dot(word_vec)
+        max_other = np.max(other_cos)
+        max_avoid = np.max(avoid_cos)
+        matches = []
+        for wi, wc in enumerate(wanted_cos):
+            if wc > max(max_other, max_avoid):
+                matches.append(wi)
+        msg = "max_other={} max_avoid={} wanted_cos={}".format(max_avoid, max_avoid, wanted_cos)
+        return (len(matches), matches, msg) # TODO
 
     def get_ranked_candidates(self, wanted_words, other_words, avoid_words):
-        "return [(score, matched_words, word)] sorted desc by score."
+        "return [(score, matched_words, msg, word)] sorted desc by score."
         wanted_vecs = self.map_words(wanted_words)
         other_vecs = self.map_words(other_words)
         avoid_vecs = self.map_words(avoid_words)
         scores = [] # (score, matches, word)
         for w, v in zip(self.words, self.words_vecs):
-            score, matches = self.candidate_score(v, wanted_vecs, other_vecs, avoid_vecs)
-            scores.append((score, matches, w))
+            score, matches, msg = self.candidate_score(v, wanted_vecs, other_vecs, avoid_vecs)
+            scores.append((score, matches, msg, w))
         scores.sort(reverse=True)
         return scores
 
@@ -38,10 +50,15 @@ class Codenamer:
         t0 = time.time()
         cands = self.get_ranked_candidates(wanted_words, other_words, avoid_words)
         t1 = time.time()
-        cand_descs = ["{:6.2g} {:15s} (matches {}: {})".format(s, w, len(m), ' '.join(m)) for s, m, w in cands[:top]]
-        return "Top {} candidates (out of {}) took {:.3g} s\n+ wanted: {}\n- other: {}\n! avoid: {}\n{}".format(
-            top, len(cands), t1 - t0, ' '.join(wanted_words), ' '.join(other_words), ' '.join(avoid_words),
-            '\n'.join(cand_descs))
+        cand_descs = ["{:6.2g} {:15s} ({:2} matches: {}) [{}]".format(s, w, len(m), ' '.join(m), wm) for s, m, wm, w in cands[:top]]
+        return """Input: 
+            + wanted: {}
+            - other: {}
+            ! avoid: {}
+            Top {} candidates (out of {}, took {:.3g} s)
+            {}""".format(' '.join(wanted_words), ' '.join(other_words), ' '.join(avoid_words),
+                top, len(cands), t1 - t0, 
+                '\n'.join(cand_descs))
 
 def load_model_txt(fname):
     with open(fname, "rt") as stream:
