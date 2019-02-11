@@ -33,8 +33,11 @@ class Codenamer:
         for wi, wc in enumerate(wanted_cos):
             if wc > max(max_other, max_avoid):
                 matches.append(wi)
+        score = 1.0 - max_other
+        if max_avoid > 0.0:
+            score -= 1.0
         msg = "max_other={} max_avoid={} wanted_cos={}".format(max_avoid, max_avoid, wanted_cos)
-        return (len(matches), matches, msg) # TODO
+        return (score, matches, msg) # TODO
 
     def get_ranked_candidates(self, wanted_words, other_words, avoid_words):
         "return [(score, matched_words, msg, word)] sorted desc by score."
@@ -54,11 +57,11 @@ class Codenamer:
         t1 = time.time()
         cand_descs = ["{:6.2g} {:15s} ({:2} matches: {}) [{}]".format(s, w, len(ms), ' '.join(wanted_words[mi] for mi in ms), wm) for s, ms, wm, w in cands[:top]]
         return """Input: 
-            + wanted: {}
-            - other: {}
-            ! avoid: {}
-            Top {} candidates (out of {}, took {:.3g} s)
-            {}""".format(' '.join(wanted_words), ' '.join(other_words), ' '.join(avoid_words),
+ + wanted: {}
+ - other: {}
+ ! avoid: {}
+Top {} candidates (out of {}, took {:.3g} s)
+{}""".format(' '.join(wanted_words), ' '.join(other_words), ' '.join(avoid_words),
                 top, len(cands), t1 - t0, 
                 '\n'.join(cand_descs))
 
