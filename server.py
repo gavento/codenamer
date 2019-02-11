@@ -36,7 +36,7 @@ body {margin: 1em 3em;}
 </body></html>
 """
 
-CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=1000)
+CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=None)
 TOP = 20
 
 def parse_w(s):
