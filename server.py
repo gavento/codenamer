@@ -19,7 +19,7 @@ body {margin: 1em 3em;}
     <h1>Codenamer - {{ g.lang }}</h1>
     <div>
     Message:<br>
-    <code class="msg">{{ g.msg }}</code>
+    <pre class="msg">{{ g.msg }}</pre>
     </div>
     <div>
     Enter space-separated words:
@@ -27,7 +27,7 @@ body {margin: 1em 3em;}
         <label for="w_wanted">Wanted words</label><br>
         <textarea name="w_wanted" id="w_wanted">{{ g.w_wanted }}</textarea><br>
         <label for="w_other">Neutral words</label><br>
-        <textarea name="w_other" id="w_other">value="{{ g.w_other }}</textarea><br>
+        <textarea name="w_other" id="w_other">{{ g.w_other }}</textarea><br>
         <label for="w_avoid">Avoid words</label><br>
         <textarea name="w_avoid" id="w_avoid">{{ g.w_avoid }}</textarea><br>
         <input type="submit" value="Find hint">
