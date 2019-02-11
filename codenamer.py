@@ -35,7 +35,7 @@ class Codenamer:
     def get_hint_msg(self, wanted_words, other_words, avoid_words, top=10):
         cands = get_ranked_candidates(self, wanted_words, other_words, avoid_words):
         cand_descs = ["{:6.2g} {:15s} (matches {}: {})".format(s, w, len(m), ' '.join(m)) for s, m, w in cands[:top]]
-        return "Top {} candidates (out of {}) for\n+ wanted: {}\n- other: {}\n! avoid: {}\n{}".format(
+        return "Top {} candidates (out of {}) took {:.3g} s\n+ wanted: {}\n- other: {}\n! avoid: {}\n{}".format(
             top, len(cands), ' '.join(wanted_words), ' '.join(other_words), ' '.join(avoid_words),
             '\n'.join(cand_descs))
 

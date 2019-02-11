@@ -1,4 +1,4 @@
-from codenamer import find_hint_msg, load_zip
+from codenamer import Codenamer
 from flask import Flask, request, render_template_string, g
 
 app = Flask(__name__)
@@ -36,11 +36,11 @@ body {margin: 1em 3em;}
 </body></html>
 """
 
+CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=1000)
+TOP = 30
+
 def parse_w(s):
     return s.lower().replace(',', ' ').split()
-
-MODEL_ZIP = "37.zip"
-MODEL_LOADED = None
 
 @app.route('/', methods=('GET', 'POST'))
 def hello():
@@ -51,10 +51,7 @@ def hello():
         w_other = parse_w(request.form['w_other'])
         w_avoid = parse_w(request.form['w_avoid'])
         try:
-            global MODEL_FILE, MODEL_LOADED
-            if MODEL_LOADED is None:
-                MODEL_LOADED = load_zip(MODEL_ZIP)
-            g.msg = find_hint_msg(w_wanted, w_other, w_avoid, model=model)
+            g.msg = CODENAMER.get_hint_msg(w_wanted, w_other, w_avoid, top=TOP)
         except Exception as e:
             g.msg = "Error:\n\n" + str(e)
         g.w_wanted = ' '.join(w_wanted)
