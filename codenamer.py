@@ -27,13 +27,17 @@ class Codenamer:
         wanted_cos = wanted_vecs.dot(word_vec)
         other_cos = other_vecs.dot(word_vec)
         avoid_cos = avoid_vecs.dot(word_vec)
+        min_wanted = np.min(wanted_cos)
         max_other = np.max(other_cos)
         max_avoid = np.max(avoid_cos)
+        max_neg = max(max_other, max_avoid)
+
         matches = []
         for wi, wc in enumerate(wanted_cos):
-            if wc > max(max_other, max_avoid):
+            if wc ** 2 > max_neg:
                 matches.append(wi)
-        score = 1.0 - max_other
+
+        score = min_wanted - max_neg
         if max_avoid > 0.0:
             score -= 1.0
         msg = "max_other={} max_avoid={} wanted_cos={}".format(max_avoid, max_avoid, wanted_cos)
