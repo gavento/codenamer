@@ -37,7 +37,7 @@ body {margin: 1em 3em;}
 """
 
 CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=1000)
-TOP = 30
+TOP = 20
 
 def parse_w(s):
     return s.lower().replace(',', ' ').split()
@@ -50,10 +50,10 @@ def hello():
         w_wanted = parse_w(request.form['w_wanted'])
         w_other = parse_w(request.form['w_other'])
         w_avoid = parse_w(request.form['w_avoid'])
-        try:
-            g.msg = CODENAMER.get_hint_msg(w_wanted, w_other, w_avoid, top=TOP)
-        except Exception as e:
-            g.msg = "Error:\n\n" + str(e)
+        #try:
+        g.msg = CODENAMER.get_hint_msg(w_wanted, w_other, w_avoid, top=TOP)
+        #except Exception as e:
+        #    g.msg = "Error:\n\n" + str(e)
         g.w_wanted = ' '.join(w_wanted)
         g.w_other = ' '.join(w_other)
         g.w_avoid = ' '.join(w_avoid)
