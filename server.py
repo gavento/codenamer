@@ -1,61 +1,84 @@
-from codenamer import Codenamer
-from flask import Flask, request, render_template_string, g
+#from codenamer import Codenamer
+from flask import Flask, request, render_template, g
+import attr
 
 app = Flask(__name__)
 
-tmpl = """
-<!doctype html><html><head>
-<title>Codenamer</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<style>
-body {margin: 1em 3em;}
-.entry {margin: 1em 0;}
-.entry textarea {width: 100%; height: 6em;}
-.entry label {padding: 10pt 0;}
-.msg {width: 100%; margin:1em 1em;}
-
-</style>
-</head><body>
-    <h1>Codenamer - {{ g.lang }}</h1>
-    <div>
-    Message:<br>
-    <pre class="msg">{{ g.msg }}</pre>
-    </div>
-    <div>
-    Enter space-separated words:
-    <form method="post" class="entry">
-        <label for="w_wanted">Wanted words</label><br>
-        <textarea name="w_wanted" id="w_wanted">{{ g.w_wanted }}</textarea><br>
-        <label for="w_other">Neutral words</label><br>
-        <textarea name="w_other" id="w_other">{{ g.w_other }}</textarea><br>
-        <label for="w_avoid">Avoid words</label><br>
-        <textarea name="w_avoid" id="w_avoid">{{ g.w_avoid }}</textarea><br>
-        <input type="submit" value="Find hint">
-    </form>
-    </div>
-</body></html>
-"""
-
-CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=None)
+#CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=None)
 TOP = 20
 
-def parse_w(s):
-    return s.lower().replace(',', ' ').split()
+@attr.s
+class Hint:
+    word = attr.ib(factory=str)
+    score = attr.ib(default=0.0)
+    bad = attr.ib(default=False)
+    matches = attr.ib(factory=dict)
+
+@attr.s
+class Instance:
+    w_pos = attr.ib(factory=list)
+    w_neut = attr.ib(factory=list)
+    w_neg = attr.ib(factory=list)
+    w_kill = attr.ib(factory=list)
+    hints = attr.ib(factory=list)
+
+    def hint_cols(self):
+        return ['BAD'] + self.w_pos + self.w_kill
+
+    @classmethod
+    def from_form(cls, form):
+        print(list(form.items()))
+        def parse_w(s):
+            return s.lower().replace(',', ' ').split()
+        s = cls(
+            parse_w(form['w_pos']),
+            parse_w(form['w_neut']),
+            parse_w(form['w_neg']),
+            parse_w(form['w_kill']),
+            []
+        )
+        cols = s.hint_cols()
+        for i in range(1000):
+            if 'h_{}'.format(i) not in form:
+                break
+            vals = set(c for ci, c in enumerate(cols) if form.get('cb_{}_{}'.format(i, ci), '') == "1")
+            s.hints.append(Hint(
+                form['h_{}'.format(i)],
+                form['s_{}'.format(i)],
+                'BAD' in vals,
+                vals.difference(['BAD']),
+            ))
+        return s
+
+    @classmethod
+    def gen_random(cls, words):
+        return cls() # TODO
+
+
+WORDLIST = []  # TODO: wordlist
+NAME = "test"
 
 @app.route('/', methods=('GET', 'POST'))
 def hello():
-    g.msg = ""
-    g.lang = 'czech'
+    inst = Instance()
+    voted = False
     if request.method == 'POST':
-        w_wanted = parse_w(request.form['w_wanted'])
-        w_other = parse_w(request.form['w_other'])
-        w_avoid = parse_w(request.form['w_avoid'])
-        #try:
-        g.msg = CODENAMER.get_hint_msg(w_wanted, w_other, w_avoid, top=TOP)
-        #except Exception as e:
-        #    g.msg = "Error:\n\n" + str(e)
-        g.w_wanted = ' '.join(w_wanted)
-        g.w_other = ' '.join(w_other)
-        g.w_avoid = ' '.join(w_avoid)
-    return render_template_string(tmpl, g=g)
+        inst = Instance.from_form(request.form)
+        if 'b_random' in request.form:
+            inst = Instance.gen_random(WORDLIST)
+        if 'b_given' in request.form or 'b_random' in request.form:
+            # TODO: generate
+            #try:
+            #g.msg = CODENAMER.get_hint_msg(w_wanted, w_other, w_avoid, top=TOP)
+            inst.hints = [Hint("testword", 4.2)]
+            pass
+        elif 'b_vote' in request.form:
+            # TODO: store votes
+            voted = True
+            pass
+        else:
+            raise Exception('Unknown button in POST')
+    cols = [(c, "") for c in inst.hint_cols()]
+    print(inst)
+    return render_template("page.html", inst=inst, name=NAME, cols=cols, voted=voted)
 
