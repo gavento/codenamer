@@ -1,5 +1,7 @@
 import time
 import os
+import pickle
+import bz2
 
 import gensim
 import gensim.downloader
@@ -18,12 +20,23 @@ class Codenamer:
             self.wordlist = [l.split()[0] for l in f.readlines() if len(l.split()[0]) > wordlist_minlen][:wordlist_limit]
 
         self.model_name = model_name
-        if os.path.exists(self.model_name):
-            self.model = gensim.models.KeyedVectors.load_word2vec_format(self.model_name)
-        else:
-            self.model = gensim.downloader.load(self.model_name)
-        self.dim = self.model.vector_size
 
+        cached_name = "cached-model-" + self.model_name + ".bz"
+        if os.path.exists(cached_name):
+            print("Loading cached model from", cached_name)
+            with bz2.BZ2File(cached_name, 'r') as f:
+                self.model = pickle.load(f)
+        else:
+            print("Loading model", self.model_name)
+            if os.path.exists(self.model_name):
+                self.model = gensim.models.KeyedVectors.load_word2vec_format(self.model_name)
+            else:
+                self.model = gensim.downloader.load(self.model_name)
+            print("Storing model to", cached_name)
+            with bz2.BZ2File(cached_name, 'w') as f:
+                pickle.dump(self.model, f)
+
+        self.dim = self.model.vector_size
         self.wordlist_vecs = self.map_words(self.wordlist)
 
     def map_words(self, words):
@@ -47,32 +60,41 @@ class Codenamer:
         v_kill = self.map_words(instance.w_kill)
         hints = []
         for w, v in zip(self.wordlist, self.wordlist_vecs):
-            score, matches, msg = self.candidate_score(instance, v, v_pos, v_neut, v_neg, v_kill)
+            score, matches, msg = self.candidate_score(instance, w, v, v_pos, v_neut, v_neg, v_kill)
             hints.append(Hint(w, score, False, matches, msg))
         hints.sort(reverse=True, key=lambda h: h.score)
         instance.hints = hints[:n]
 
-    def candidate_score(self, instance, v_cand, v_pos, v_neut, v_neg, v_kill):
-        return (1.0, [], "")
-        # TODO
-        "return (score, matched_words, msg)"
+    def candidate_score(self, instance, word, v_cand, v_pos, v_neut, v_neg, v_kill):
+        "return (score, matched_positive_words, msg)"
+        if np.linalg.norm(v_cand) < 0.1:
+            return (-1000.0, [], "No vectors for word")
         sim_pos = v_pos.dot(v_cand)
         sim_neut = v_neut.dot(v_cand)
         sim_neg = v_neg.dot(v_cand)
         sim_kill = v_kill.dot(v_cand)
 
-        min_wanted = np.min(wanted_cos)
-        max_other = np.max(other_cos)
-        max_avoid = np.max(avoid_cos)
-        max_neg = max(max_other, max_avoid)
+        max_neut = np.max(sim_neut)
+        max_neg = np.max(sim_neg)
+        max_kill = np.max(sim_kill)
+        max_avoid = max(max_neut, max_neg, max_kill)
 
         matches = []
-        for wi, wc in enumerate(wanted_cos):
-            if wc ** 2 > max_neg:
-                matches.append(wi)
+        score = 0.0
+        for w, sim in zip(instance.w_pos, sim_pos):
+            if sim > max_avoid:
+                matches.append(w)
+                score += sim - max_avoid
+            if w == word:
+                score -= 100
+        msg = "matches: {}, max_neut/neg/kill: {} {} {}, sim_pos: {}".format(
+            ' '.join(matches), max_neut, max_neg, max_kill, sim_pos)
+        return (score, matches, msg)
 
-        score = min_wanted - max_neg
-        if max_avoid > 0.0:
-            score -= 1.0
-        msg = "max_other={} max_avoid={} wanted_cos={}".format(max_avoid, max_avoid, wanted_cos)
-        return (score, matches, msg) # TODO
+        # Leftovers
+        if max_kill > 0.1:
+            score -= 100.0
+        if max_neg > 0.2:
+            score -= 100.0
+        if max_neut > 0.4:
+            score -= 100.0

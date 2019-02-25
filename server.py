@@ -10,13 +10,17 @@ from instance import Hint, Instance
 
 
 TOP = 15
-NAME = "en-bgg-google-twitter-25"
 CODENAMES_FILE = "codenames-en-bgg.txt"
 WORDLIST_FILE = "wordlist-en-10000-google-no-swears.txt"
-MODEL_NAME = "model-empty-100.txt"
-LOG_DB_FILE = "votelog.sqlite3"
 
-CODENAMER = Codenamer(CODENAMES_FILE, WORDLIST_FILE, MODEL_NAME)
+#MODEL_NAME = "model-empty-100.txt"
+MODEL_NAME = "glove-twitter-25"
+#MODEL_NAME = "conceptnet-numberbatch-17-06-300"
+
+NAME = "en_c-bgg_w-gogle_m-" + MODEL_NAME
+LOG_DB_FILE = "votes_" + NAME + ".sqlite3"
+
+CODENAMER = Codenamer(CODENAMES_FILE, WORDLIST_FILE, MODEL_NAME, wordlist_limit=2000)
 
 app = Flask(__name__)
 

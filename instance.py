@@ -13,7 +13,8 @@ class Hint:
 
 @attr.s
 class Instance:
-    RANDOM_WORD_COUNTS = (7, 8, 9, 1)
+    #RANDOM_WORD_COUNTS = (7, 8, 9, 1)
+    RANDOM_WORD_COUNTS = (5, 4, 4, 1)
 
     w_pos = attr.ib(factory=list)
     w_neut = attr.ib(factory=list)
