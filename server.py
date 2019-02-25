@@ -1,62 +1,17 @@
-#from codenamer import Codenamer
-from flask import Flask, request, render_template, g
-import attr
+from flask import Flask, render_template, request
+
+from codenamer import Codenamer
+from instance import Hint, Instance
 
 app = Flask(__name__)
 
-#CODENAMER = Codenamer('cc.cs.300.bin', 'cs_50k.txt', word_limit=None)
 TOP = 20
+NAME = "en-bgg-google-twitter-25"
+CODENAMES_FILE = "codenames-en-bgg.txt"
+WORDLIST_FILE = "wordlist-en-bgg.txt"
+MODEL_NAME = "glove-twitter-25"
 
-@attr.s
-class Hint:
-    word = attr.ib(factory=str)
-    score = attr.ib(default=0.0)
-    bad = attr.ib(default=False)
-    matches = attr.ib(factory=dict)
-
-@attr.s
-class Instance:
-    w_pos = attr.ib(factory=list)
-    w_neut = attr.ib(factory=list)
-    w_neg = attr.ib(factory=list)
-    w_kill = attr.ib(factory=list)
-    hints = attr.ib(factory=list)
-
-    def hint_cols(self):
-        return ['BAD'] + self.w_pos + self.w_kill
-
-    @classmethod
-    def from_form(cls, form):
-        print(list(form.items()))
-        def parse_w(s):
-            return s.lower().replace(',', ' ').split()
-        s = cls(
-            parse_w(form['w_pos']),
-            parse_w(form['w_neut']),
-            parse_w(form['w_neg']),
-            parse_w(form['w_kill']),
-            []
-        )
-        cols = s.hint_cols()
-        for i in range(1000):
-            if 'h_{}'.format(i) not in form:
-                break
-            vals = set(c for ci, c in enumerate(cols) if form.get('cb_{}_{}'.format(i, ci), '') == "1")
-            s.hints.append(Hint(
-                form['h_{}'.format(i)],
-                form['s_{}'.format(i)],
-                'BAD' in vals,
-                vals.difference(['BAD']),
-            ))
-        return s
-
-    @classmethod
-    def gen_random(cls, words):
-        return cls() # TODO
-
-
-WORDLIST = []  # TODO: wordlist
-NAME = "test"
+CODENAMER = Codenamer(CODENAMES_FILE, WORDLIST_FILE, MODEL_NAME)
 
 @app.route('/', methods=('GET', 'POST'))
 def hello():
@@ -67,10 +22,8 @@ def hello():
         if 'b_random' in request.form:
             inst = Instance.gen_random(WORDLIST)
         if 'b_given' in request.form or 'b_random' in request.form:
-            # TODO: generate
-            #try:
-            #g.msg = CODENAMER.get_hint_msg(w_wanted, w_other, w_avoid, top=TOP)
-            inst.hints = [Hint("testword", 4.2)]
+            CODENAMER.create_hints(inst, n=TOP)
+            inst.hints.insert(0, Hint("", 0.0))
             pass
         elif 'b_vote' in request.form:
             # TODO: store votes
@@ -81,4 +34,3 @@ def hello():
     cols = [(c, "") for c in inst.hint_cols()]
     print(inst)
     return render_template("page.html", inst=inst, name=NAME, cols=cols, voted=voted)
-

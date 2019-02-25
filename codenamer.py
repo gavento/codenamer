@@ -1,32 +1,63 @@
-import numpy as np
-import zipfile
-import fastText
-import numpy as np
 import time
+
+import gensim
+import gensim.downloader
+import numpy as np
+
+from instance import Hint, Instance
 
 
 class Codenamer:
-    def __init__(self, model_filename, words_filename, word_limit=None):
-        self.model_filename = model_filename
+    def __init__(self, codenames_file, wordlist_file, model_name, *, model_strip_prefix='', codenames_limit=None, wordlist_limit=None, wordlist_minlen=3):
+        self.codenamef_file = codenames_file
+        with open(self.codenames_file, 'rt') as f:
+            self.codenames = f.readlines()[:codenames_limit]
+        self.wordlist_file = wordlist_file
+        with open(self.wordlist_file, 'rt') as f:
+            self.wordlist = [l.split()[0] for l in f.readlines() if len(l.split()[0]) > wordlist_minlen][:word_limit]
+
+        self.model_name = model_name
+        self.model = gensim.downloader.load(self.model_name)
+
         self.model = fastText.FastText.load_model(self.model_filename)
-        self.dim = self.model.get_dimension()
-        self.words_filename = words_filename
-        with open(self.words_filename, 'rt') as f:
-            self.words = [l.split()[0] for l in f.readlines()[:word_limit]]
-        self.words_vecs = self.map_words(self.words)
+        self.dim = self.model.vector_size
+
+        self.wordlist_vecs = self.map_words(self.wordlist)
 
     def map_words(self, words):
         "return L2-normalized word vectors as ndarray"
         if not words:
             return np.zeros((0, self.dim))
-        a = np.array([self.model.get_word_vector(w) for w in words])
-        return a / np.linalg.norm(a, axis=1).reshape(-1, 1)
+        vlist = []
+        for w in words:
+            try:
+                v = self.model.get_vector(w)
+                v = v / np.linalg.norm(v)
+            except KeyError:
+                v = np.zeros(self.dim)
+            vlist.append(v)
+        return np.array(vlist, dtype=np.float32)
 
-    def candidate_score(self, word_vec, wanted_vecs, other_vecs, avoid_vecs):
-        "return (score, matched_indices)"
-        wanted_cos = wanted_vecs.dot(word_vec)
-        other_cos = other_vecs.dot(word_vec)
-        avoid_cos = avoid_vecs.dot(word_vec)
+    def create_hints(self, instance, n=10):
+        v_pos = self.map_words(instance.w_pos)
+        v_neut = self.map_words(instance.w_neut)
+        v_neg = self.map_words(instance.w_neg)
+        v_kill = self.map_words(instance.w_kill)
+        hints = []
+        for w, v in zip(self.wordlist, self.wordlist_vecs):
+            score, matches, msg = self.candidate_score(instance, v, v_pos, v_neut, v_neg, v_kill)
+            hints.append(Hint(w, score, False, matches, msg))
+        hints.sort(reverse=True, key=lambda h: h.score)
+        instance.hints = hints[:n]
+
+    def candidate_score(self, instance, v_cand, v_pos, v_neut, v_neg, v_kill):
+        # TODO
+        "return (score, matched_words, msg)"
+        sim_pos = v_pos.dot(v_cand)
+        sim_neut = v_neut.dot(v_cand)
+        sim_neg = v_neg.dot(v_cand)
+        sim_kill = v_kill.dot(v_cand)
+
         min_wanted = np.min(wanted_cos)
         max_other = np.max(other_cos)
         max_avoid = np.max(avoid_cos)
@@ -42,78 +73,3 @@ class Codenamer:
             score -= 1.0
         msg = "max_other={} max_avoid={} wanted_cos={}".format(max_avoid, max_avoid, wanted_cos)
         return (score, matches, msg) # TODO
-
-    def get_ranked_candidates(self, wanted_words, other_words, avoid_words):
-        "return [(score, matched_words, msg, word)] sorted desc by score."
-        wanted_vecs = self.map_words(wanted_words)
-        other_vecs = self.map_words(other_words)
-        avoid_vecs = self.map_words(avoid_words)
-        scores = [] # (score, matches, word)
-        for w, v in zip(self.words, self.words_vecs):
-            score, matches, msg = self.candidate_score(v, wanted_vecs, other_vecs, avoid_vecs)
-            scores.append((score, matches, msg, w))
-        scores.sort(reverse=True)
-        return scores
-
-    def get_hint_msg(self, wanted_words, other_words, avoid_words, top=10):
-        t0 = time.time()
-        cands = self.get_ranked_candidates(wanted_words, other_words, avoid_words)
-        t1 = time.time()
-        cand_descs = ["{:6.2g} {:15s} ({:2} matches: {}) [{}]".format(s, w, len(ms), ' '.join(wanted_words[mi] for mi in ms), wm) for s, ms, wm, w in cands[:top]]
-        return """Input: 
- + wanted: {}
- - other: {}
- ! avoid: {}
-Top {} candidates (out of {}, took {:.3g} s)
-{}""".format(' '.join(wanted_words), ' '.join(other_words), ' '.join(avoid_words),
-                top, len(cands), t1 - t0, 
-                '\n'.join(cand_descs))
-
-def load_model_txt(fname):
-    with open(fname, "rt") as stream:
-        m = gensim.models.KeyedVectors.load_word2vec_format(stream, binary=False, unicode_errors='replace')
-    return m
-
-
-def load_zip(fname):
-    with zipfile.ZipFile(fname, "r") as archive:
-        stream = archive.open("model.txt")
-        m = gensim.models.KeyedVectors.load_word2vec_format(stream, binary=False, unicode_errors='replace')
-    return m
-
-
-def find_hint_msg(w_wanted, w_other, w_avoid, model):
-    msg = []
-    def lookup(ws):
-        res = []
-        for w in ws:
-            try:
-                v = model.get_vector(w)
-                res.append(v)
-            except KeyError:
-                msg.append("W: {!r} not found in map, ignoring".format(w))
-        return res
-    v_wanted = lookup(w_wanted)
-    v_other = lookup(w_other)
-    v_avoid = lookup(w_avoid)
-    if not v_wanted:
-        msg.append("E: no wanted word vectors")
-    else:
-        msg.append("Most appropriate word and scores:")
-        ms = model.most_similar(positive=w_wanted, negative=w_avoid+w_other)
-        for w, ws in ms:
-            msg.append("  {:10f}  {}".format(ws, w))
-
-        msg.append("Most appropriate word and scores (cosmul):")
-        ms = model.most_similar_cosmul(positive=w_wanted, negative=w_avoid+w_other)
-        for w, ws in ms:
-            msg.append("  {:10f}  {}".format(ws, w))
-
-    return '\n'.join(msg)
-
-
-
-if __name__ == '__main__':
-    m = load_model_txt("test_model.txt")
-
-

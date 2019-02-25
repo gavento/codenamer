@@ -5,15 +5,15 @@
     <form method="post">
         <div class="form-group">
             <label for="w_pos">Positive</label>
-            <textarea class="form-control" id="w_pos" name="w_pos" rows="2">{{ inst.w_pos|join(" ") }}</textarea>
+            <textarea class="form-control" id="w_pos" name="w_pos" rows="1">{{ inst.w_pos|join(" ") }}</textarea>
         </div>
         <div class="form-group">
             <label for="w_neut">Neutral</label>
-            <textarea class="form-control" id="w_neut" name="w_neut" rows="2">{{ inst.w_neut|join(" ") }}</textarea>
+            <textarea class="form-control" id="w_neut" name="w_neut" rows="1">{{ inst.w_neut|join(" ") }}</textarea>
         </div>
         <div class="form-group">
             <label for="w_neg">Negative</label>
-            <textarea class="form-control" id="w_neg" name="w_neg" rows="2">{{ inst.w_neg|join(" ") }}</textarea>
+            <textarea class="form-control" id="w_neg" name="w_neg" rows="1">{{ inst.w_neg|join(" ") }}</textarea>
         </div>
         <div class="form-group">
             <label for="w_kill">Killer</label>
@@ -28,7 +28,7 @@
             Vote recorded.
         </div>
         {% elif inst.hints %}
-        <table>
+        <table class="table table-sm">
             <tr>
                 <th>Hint</th>
                 <th>Score</th>
@@ -36,8 +36,8 @@
             </tr>
             {% for h in inst.hints %}{% set hintloop = loop %}
             <tr>
-                <td><input type="text" name="h_{{ hintloop.index0 }}" value="{{ h.word }}" readonly></td>
-                <td><input type="text" name="s_{{ hintloop.index0 }}" value="{{ h.score }}" readonly></td>
+                <td><input type="text" name="h_{{ hintloop.index0 }}" value="{{ h.word }}" readonly style="width: auto;"></td>
+                <td><input type="text" name="s_{{ hintloop.index0 }}" value="{{ h.score }}" readonly style="width: 3em;"></td>
                 {% for c in cols %}<td>
                     <input type="checkbox" name="cb_{{ hintloop.index0 }}_{{ loop.index0 }}"
                     value="1" class="{{ c[1] }}">
