@@ -22,7 +22,16 @@ class Instance:
     hints = attr.ib(factory=list)
 
     def hint_cols(self):
-        return ['BAD'] + self.w_pos + self.w_kill
+        l = [('BAD', "c_bad")]
+        for w in self.w_pos:
+            l.append((w, "c_pos"))
+        for w in self.w_neut:
+            l.append((w, "c_neut"))
+        for w in self.w_neg:
+            l.append((w, "c_neg"))
+        for w in self.w_kill:
+            l.append((w, "c_kill"))
+        return l
 
     @classmethod
     def from_form(cls, form):
@@ -51,10 +60,10 @@ class Instance:
 
     @classmethod
     def gen_random(cls, words):
-        w = random.sample(WORDLIST, sum(self.RANDOM_WORD_COUNTS))
+        w = random.sample(words, sum(cls.RANDOM_WORD_COUNTS))
         def take(l, n):
             x = l[:n]
             l[:n] = []
             return x
-        ws = [take(w, i) for i in self.RANDOM_WORD_COUNTS]
+        ws = [take(w, i) for i in cls.RANDOM_WORD_COUNTS]
         return cls(*ws)

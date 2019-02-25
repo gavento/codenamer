@@ -1,4 +1,5 @@
 import time
+import os
 
 import gensim
 import gensim.downloader
@@ -9,17 +10,18 @@ from instance import Hint, Instance
 
 class Codenamer:
     def __init__(self, codenames_file, wordlist_file, model_name, *, model_strip_prefix='', codenames_limit=None, wordlist_limit=None, wordlist_minlen=3):
-        self.codenamef_file = codenames_file
+        self.codenames_file = codenames_file
         with open(self.codenames_file, 'rt') as f:
             self.codenames = f.readlines()[:codenames_limit]
         self.wordlist_file = wordlist_file
         with open(self.wordlist_file, 'rt') as f:
-            self.wordlist = [l.split()[0] for l in f.readlines() if len(l.split()[0]) > wordlist_minlen][:word_limit]
+            self.wordlist = [l.split()[0] for l in f.readlines() if len(l.split()[0]) > wordlist_minlen][:wordlist_limit]
 
         self.model_name = model_name
-        self.model = gensim.downloader.load(self.model_name)
-
-        self.model = fastText.FastText.load_model(self.model_filename)
+        if os.path.exists(self.model_name):
+            self.model = gensim.models.KeyedVectors.load_word2vec_format(self.model_name)
+        else:
+            self.model = gensim.downloader.load(self.model_name)
         self.dim = self.model.vector_size
 
         self.wordlist_vecs = self.map_words(self.wordlist)
@@ -47,10 +49,11 @@ class Codenamer:
         for w, v in zip(self.wordlist, self.wordlist_vecs):
             score, matches, msg = self.candidate_score(instance, v, v_pos, v_neut, v_neg, v_kill)
             hints.append(Hint(w, score, False, matches, msg))
-        hints.sort(reverse=True, key=lambda h: h.score)
+        hints.sort(reverse=True, key=lambda h: h.score)
         instance.hints = hints[:n]
 
     def candidate_score(self, instance, v_cand, v_pos, v_neut, v_neg, v_kill):
+        return (1.0, [], "")
         # TODO
         "return (score, matched_words, msg)"
         sim_pos = v_pos.dot(v_cand)

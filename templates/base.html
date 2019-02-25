@@ -6,6 +6,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <link rel="stylesheet" href="static/bootstrap.css" media="screen">
+    <style>
+
+.votetable th {
+  vertical-align: bottom;
+}
+
+th.rotate {
+  /* Something you can count on */
+  height: 8em;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+th.rotate > div {
+  transform: 
+    /* 45 is really 360 - 45 */
+    rotate(315deg);
+  width: 1.6em;
+}
+
+th.rotate > div > span {
+  /*border-bottom: 1px solid #ccc;*/
+  padding: 5px 10px;
+}
+
+input[type='checkbox'].votebox {
+    -webkit-appearance:none;
+    width:1.7em;
+    height:1.7em;
+    background:white;
+    border-radius:5px;
+    border:2px solid #555;
+}
+
+input[type='checkbox'].votebox:checked {
+    background: #abd;
+}
+
+td.c_pos {
+  background-color: #bfa !important;
+}
+span.c_pos {
+  color: #060;
+}
+
+td.c_neut {
+  background-color: #ccc !important;
+}
+span.c_neut {
+  color: #444;
+}
+
+td.c_neg {
+  background-color: #fd9 !important;
+}
+span.c_neg {
+  color: #640;
+}
+
+td.c_kill {
+  background-color: #fa9 !important;
+}
+span.c_kill {
+  color: #700;
+}
+
+</style>
   </head>
   <body>
     <div class="container">

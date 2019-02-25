@@ -3,21 +3,29 @@
 {% block content %}
     <h1>Codenamer AI ({{ name }})</h1>
     <form method="post">
-        <div class="form-group">
-            <label for="w_pos">Positive</label>
-            <textarea class="form-control" id="w_pos" name="w_pos" rows="1">{{ inst.w_pos|join(" ") }}</textarea>
-        </div>
-        <div class="form-group">
-            <label for="w_neut">Neutral</label>
-            <textarea class="form-control" id="w_neut" name="w_neut" rows="1">{{ inst.w_neut|join(" ") }}</textarea>
-        </div>
-        <div class="form-group">
-            <label for="w_neg">Negative</label>
-            <textarea class="form-control" id="w_neg" name="w_neg" rows="1">{{ inst.w_neg|join(" ") }}</textarea>
-        </div>
-        <div class="form-group">
-            <label for="w_kill">Killer</label>
-            <textarea class="form-control" id="w_kill" name="w_kill" rows="1">{{ inst.w_kill|join(" ") }}</textarea>
+        <div class="form-group row">
+            <label for="w_pos" class="col-sm-1 col-form-label">Positive</label>
+            <div class="col-sm-11">
+                    <textarea class="form-control" id="w_pos" name="w_pos" rows="1">{{ inst.w_pos|join(" ") }}</textarea>
+                </div>
+            </div>
+        <div class="form-group row">
+            <label for="w_neut" class="col-sm-1 col-form-label">Neutral</label>
+            <div class="col-sm-11">
+                <textarea class="form-control" id="w_neut" name="w_neut" rows="1">{{ inst.w_neut|join(" ") }}</textarea>
+            </div>
+            </div>
+        <div class="form-group row">
+            <label for="w_neg" class="col-sm-1 col-form-label">Negative</label>
+            <div class="col-sm-11">
+                <textarea class="form-control" id="w_neg" name="w_neg" rows="1">{{ inst.w_neg|join(" ") }}</textarea>
+            </div>
+            </div>
+        <div class="form-group row">
+            <label for="w_kill" class="col-sm-1 col-form-label">Killer</label>
+            <div class="col-sm-11">
+                <textarea class="form-control" id="w_kill" name="w_kill" rows="1">{{ inst.w_kill|join(" ") }}</textarea>
+            </div>
         </div>
         <div class="form-group">
             <button type="submit" name="b_random" class="btn btn-primary">Use random words</button>
@@ -28,19 +36,21 @@
             Vote recorded.
         </div>
         {% elif inst.hints %}
-        <table class="table table-sm">
+        <table class="table table-sm votetable" style="width: auto;">
             <tr>
                 <th>Hint</th>
                 <th>Score</th>
-                {% for c in cols %}<th>{{ c[0] }}</th>{% endfor %}
+                {% for c in cols %}<th class="rotate">
+                    <div><span class="{{ c[1] }}">{{ c[0] }}</span></div>
+                </th>{% endfor %}
             </tr>
             {% for h in inst.hints %}{% set hintloop = loop %}
             <tr>
-                <td><input type="text" name="h_{{ hintloop.index0 }}" value="{{ h.word }}" readonly style="width: auto;"></td>
+                <td><input type="text" name="h_{{ hintloop.index0 }}" value="{{ h.word }}" {% if h.word %}readonly{% endif %} placeholder="Custom hint" style="width: 10em;"></td>
                 <td><input type="text" name="s_{{ hintloop.index0 }}" value="{{ h.score }}" readonly style="width: 3em;"></td>
-                {% for c in cols %}<td>
+                {% for c in cols %}<td class="{{ c[1] }}">
                     <input type="checkbox" name="cb_{{ hintloop.index0 }}_{{ loop.index0 }}"
-                    value="1" class="{{ c[1] }}">
+                    value="1" class="votebox {{ c[1] }}">
                 </td>{% endfor %}
             </tr>
             {% endfor %}
