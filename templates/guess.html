@@ -7,23 +7,6 @@
         Matches recorded. Thanks!
     </div>
     {% endif %}
-    <div>
-        <b>Instructions.</b>
-        <p>
-        Select the columns you would guess given the hint in the row.
-        You do not know the number of matches but you know there are 5 your words,
-        4 neutral words, 4 opponent words and 1 killer word in random order.
-        <p>
-        Please try to consider every row independently.
-        Select BAD if the hint is completely unusable.
-        A row with no marks (not even BAD) will be ignored.
-        Please ignore that some hints have common root parts with the given words.
-        <p>
-        Entering a nick may help me with the data analysis, but is optional.
-        I promise not to publish the nicks or other details.
-        I will publish the collected words and matches, anonymized, most likely under
-        Creative Commons licence.
-    </div>
     <form method="post">
         <input type="hidden" name="w_pos" value="{{ inst.w_pos|join(' ') }}">
         <input type="hidden" name="w_neut" value="{{ inst.w_neut|join(' ') }}">
@@ -55,5 +38,24 @@
         </div>
     </form>
     <hr>
-    <a href="https://github.com/gavento/codenamer">[github]</a>
+    <div>
+        <b>Instructions.</b>
+        <p>
+        I am collecting data to fine-tune the system. 
+        Select the columns you would guess given the hint in the row.
+        You do not know the number of matches but you know there are 5 your words,
+        4 neutral words, 4 opponent words and 1 killer word in random order.
+        <p>
+        Please try to consider every row independently.
+        Select BAD if the hint is completely unusable.
+        A row with no marks (not even BAD) will be ignored.
+        Please ignore that some hints have common root parts with the given words.
+        <p>
+        Entering a nick may help me with the data analysis, but is optional.
+        I promise not to publish the nicks.
+        I will publish the collected words and matches, anonymized, most likely under
+        Creative Commons licence.
+        <p>
+        Source at <a href="https://github.com/gavento/codenamer">[github]</a>
+    </div>
 {% endblock %}

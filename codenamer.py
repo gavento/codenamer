@@ -13,21 +13,6 @@ from instance import Hint, Instance
 @gin.configurable
 class Codenamer:
     def __init__(self, codenames_file, wordlist_file, model_name, *, model_prefix='', codenames_limit=None, codenames_minlen=3, wordlist_limit=None, wordlist_minlen=3, name="unknown"):
-        def load_list(fname, minlen, limit, prefix=""):
-            r = []
-            with open(fname, 'rt') as f:
-                for l in f.readlines():
-                    if limit is not None and len(r) >= limit:
-                        break
-                    w = l.split()[0]
-                    if len(w) > minlen and w.isalpha():
-                        r.append(w)                    
-            return r
-
-        self.codenames_file = codenames_file
-        self.codenames = load_list(self.codenames_file, codenames_minlen, codenames_limit)
-        self.wordlist_file = wordlist_file
-        self.wordlist = load_list(self.wordlist_file, wordlist_minlen, wordlist_limit)
 
         self.model_name = model_name
         self.model_prefix = model_prefix
@@ -47,6 +32,26 @@ class Codenamer:
             print("Storing model to", cached_name)
             with bz2.BZ2File(cached_name, 'w') as f:
                 pickle.dump(self.model, f)
+
+        def load_list(fname, minlen, limit, prefix=""):
+            r = []
+            with open(fname, 'rt') as f:
+                for l in f.readlines():
+                    if limit is not None and len(r) >= limit:
+                        break
+                    w = l.split()[0]
+                    if len(w) > minlen and w.isalpha():
+                        try:
+                            self.model.get_vector(self.model_prefix + w)
+                            r.append(w)
+                        except KeyError:
+                            pass
+            return r
+
+        self.codenames_file = codenames_file
+        self.codenames = load_list(self.codenames_file, codenames_minlen, codenames_limit)
+        self.wordlist_file = wordlist_file
+        self.wordlist = load_list(self.wordlist_file, wordlist_minlen, wordlist_limit)
 
         self.dim = self.model.vector_size
         self.wordlist_vecs = self.map_words(self.wordlist)
@@ -86,9 +91,9 @@ class Codenamer:
         sim_neg = v_neg.dot(v_cand)
         sim_kill = v_kill.dot(v_cand)
 
-        max_neut = np.max(sim_neut)
-        max_neg = np.max(sim_neg)
-        max_kill = np.max(sim_kill)
+        max_neut = max(sim_neut, default=0.0)
+        max_neg = max(sim_neg, default=0.0)
+        max_kill = max(sim_kill, default=0.0)
         max_avoid = max(max_neut, max_neg, max_kill)
 
         matches = []
@@ -96,9 +101,12 @@ class Codenamer:
         for w, sim in zip(instance.w_pos, sim_pos):
             if sim > max_avoid:
                 matches.append(w)
-                score += sim - max_avoid
+                score += sim - max_avoid + 0.3
             if w == word:
                 score -= 100
-        msg = "matches: {}, max_neut/neg/kill: {} {} {}, sim_pos: {}".format(
-            ' '.join(matches), max_neut, max_neg, max_kill, sim_pos)
+        if max_kill > -0.2:
+            score -= 10 * max_kill
+
+        msg = "matches: {}, max_neut/neg/kill: {:.2f} {:.2f} {:.2f}, sim_pos: {}".format(
+            ' '.join(matches), max_neut, max_neg, max_kill, ' '.join("{:.2f}".format(s) for s in sim_pos))
         return (score, matches, msg)

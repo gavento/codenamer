@@ -9,7 +9,7 @@ An exploration of AI for the game of [Codenames](https://boardgamegeek.com/board
 ## Running
 
 ```sh
-pip install numpy gensim flask attrs
+pip install numpy gensim flask attrs portalocker
 ./download_data.sh  # (needed for some combinations)
 FLASK_ENV=development FLASK_APP=server.py flask run
 ```

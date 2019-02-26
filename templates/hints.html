@@ -56,11 +56,35 @@
             </tr>
             {% endfor %}
         </table>
-        <div class="form-group">
+        <div class="form-group row">
+            <input type="text" class="form-control col-sm-3" name="nick" placeholder="Nick (optional)" value="{{ nick }}">
             <button type="submit" name="b_vote" class="btn btn-primary">Vote</button>
         </div>
         {% endif %}
     </form>
     <hr>
-    <a href="https://github.com/gavento/codenamer">[github]</a>
+    <div>
+        <p><b>Instructions</b></p>
+        <p>
+        Enter space-separated words into word categories or use randomly generated words.
+        Hints may have common root parts with the given words.
+        <p><b>Hint quality feedback</b></p>
+        <p>
+        I am collecting data to fine-tune the system. 
+        You can vote on the matches in the lower form:
+        Mark all the words you think you would
+        match hearing that hint (including enemy and killer words).
+        Select just "BAD" if the hint is completely unusable.
+        A row with no marks (not even "BAD") will be ignored.
+        You may add a new hint you find missing (and its matches) to the first line.
+        <p>
+        Entering a nick may help me with the data analysis, but is optional.
+        I promise not to publish the nicks.
+        I will publish the collected words and matches, anonymized, most likely under
+        Creative Commons licence.
+        <p>
+        For a more efficient way to generate matching data, see <a href="./guess">here</a>.
+        <p>
+        Source at <a href="https://github.com/gavento/codenamer">[github]</a>
+    </div>
 {% endblock %}

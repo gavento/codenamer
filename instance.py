@@ -1,4 +1,7 @@
 import random
+import time
+import json
+import collections
 
 import attr
 
@@ -20,6 +23,8 @@ class Instance:
     w_neg = attr.ib(factory=list)
     w_kill = attr.ib(factory=list)
     hints = attr.ib(factory=list)
+    nickname = attr.ib(default="")
+    timestamp = attr.ib(factory=lambda: time.time())
 
     def hint_cols(self):
         l = [('BAD', "c_bad")]
@@ -35,7 +40,6 @@ class Instance:
 
     @classmethod
     def from_form(cls, form):
-        print(list(form.items()))
         def parse_w(s):
             return s.lower().replace(',', ' ').split()
         s = cls(
@@ -43,13 +47,14 @@ class Instance:
             parse_w(form['w_neut']),
             parse_w(form['w_neg']),
             parse_w(form['w_kill']),
-            []
+            [],
+            form.get("nick", ""),
         )
         cols = s.hint_cols()
         for i in range(1000):
             if 'h_{}'.format(i) not in form:
                 break
-            vals = set(c for ci, c in enumerate(cols) if form.get('cb_{}_{}'.format(i, ci), '') == "1")
+            vals = set(c[0] for ci, c in enumerate(cols) if form.get('cb_{}_{}'.format(i, ci), '') == "1")
             s.hints.append(Hint(
                 form['h_{}'.format(i)],
                 form['s_{}'.format(i)],
@@ -70,3 +75,7 @@ class Instance:
             return x
         ws = [take(w, i) for i in counts]
         return cls(*ws)
+
+    def to_json(self, one_line=True):
+        d = attr.asdict(self, dict_factory=collections.OrderedDict)
+        return json.dumps(d, indent=None, ensure_ascii=False)
