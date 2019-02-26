@@ -13,8 +13,7 @@ class Hint:
 
 @attr.s
 class Instance:
-    #RANDOM_WORD_COUNTS = (7, 8, 9, 1)
-    RANDOM_WORD_COUNTS = (5, 4, 4, 1)
+    RANDOM_WORD_COUNTS = (8, 9, 7, 1)
 
     w_pos = attr.ib(factory=list)
     w_neut = attr.ib(factory=list)
@@ -60,11 +59,14 @@ class Instance:
         return s
 
     @classmethod
-    def gen_random(cls, words):
-        w = random.sample(words, sum(cls.RANDOM_WORD_COUNTS))
+    def gen_random(cls, words, counts=None):
+        if counts is None:
+            counts = cls.RANDOM_WORD_COUNTS
+        assert len(counts) == 4
+        w = random.sample(words, sum(counts))
         def take(l, n):
             x = l[:n]
             l[:n] = []
             return x
-        ws = [take(w, i) for i in cls.RANDOM_WORD_COUNTS]
+        ws = [take(w, i) for i in counts]
         return cls(*ws)

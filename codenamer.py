@@ -1,25 +1,37 @@
-import time
+import bz2
 import os
 import pickle
-import bz2
+import time
 
 import gensim
 import gensim.downloader
+import gin
 import numpy as np
 
 from instance import Hint, Instance
 
-
+@gin.configurable
 class Codenamer:
-    def __init__(self, codenames_file, wordlist_file, model_name, *, model_strip_prefix='', codenames_limit=None, wordlist_limit=None, wordlist_minlen=3):
+    def __init__(self, codenames_file, wordlist_file, model_name, *, model_prefix='', codenames_limit=None, codenames_minlen=3, wordlist_limit=None, wordlist_minlen=3, name="unknown"):
+        def load_list(fname, minlen, limit, prefix=""):
+            r = []
+            with open(fname, 'rt') as f:
+                for l in f.readlines():
+                    if limit is not None and len(r) >= limit:
+                        break
+                    w = l.split()[0]
+                    if len(w) > minlen and w.isalpha():
+                        r.append(w)                    
+            return r
+
         self.codenames_file = codenames_file
-        with open(self.codenames_file, 'rt') as f:
-            self.codenames = f.readlines()[:codenames_limit]
+        self.codenames = load_list(self.codenames_file, codenames_minlen, codenames_limit)
         self.wordlist_file = wordlist_file
-        with open(self.wordlist_file, 'rt') as f:
-            self.wordlist = [l.split()[0] for l in f.readlines() if len(l.split()[0]) > wordlist_minlen][:wordlist_limit]
+        self.wordlist = load_list(self.wordlist_file, wordlist_minlen, wordlist_limit)
 
         self.model_name = model_name
+        self.model_prefix = model_prefix
+        self.name = name
 
         cached_name = "cached-model-" + self.model_name + ".bz"
         if os.path.exists(cached_name):
@@ -46,7 +58,7 @@ class Codenamer:
         vlist = []
         for w in words:
             try:
-                v = self.model.get_vector(w)
+                v = self.model.get_vector(self.model_prefix + w)
                 v = v / np.linalg.norm(v)
             except KeyError:
                 v = np.zeros(self.dim)
@@ -90,11 +102,3 @@ class Codenamer:
         msg = "matches: {}, max_neut/neg/kill: {} {} {}, sim_pos: {}".format(
             ' '.join(matches), max_neut, max_neg, max_kill, sim_pos)
         return (score, matches, msg)
-
-        # Leftovers
-        if max_kill > 0.1:
-            score -= 100.0
-        if max_neg > 0.2:
-            score -= 100.0
-        if max_neut > 0.4:
-            score -= 100.0

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Codenamer AI - guess matches{% endblock %}
+{% block content %}
+    <h1>Codenamer AI ({{ name }})</h1>
+    {% if voted %}
+    <div class="alert alert-success">
+        Matches recorded. Thanks!
+    </div>
+    {% endif %}
+    <div>
+        <b>Instructions.</b>
+        <p>
+        Select the columns you would guess given the hint in the row.
+        You do not know the number of matches but you know there are 5 your words,
+        4 neutral words, 4 opponent words and 1 killer word in random order.
+        <p>
+        Please try to consider every row independently.
+        Select BAD if the hint is completely unusable.
+        A row with no marks (not even BAD) will be ignored.
+        Please ignore that some hints have common root parts with the given words.
+        <p>
+        Entering a nick may help me with the data analysis, but is optional.
+        I promise not to publish the nicks or other details.
+        I will publish the collected words and matches, anonymized, most likely under
+        Creative Commons licence.
+    </div>
+    <form method="post">
+        <input type="hidden" name="w_pos" value="{{ inst.w_pos|join(' ') }}">
+        <input type="hidden" name="w_neut" value="{{ inst.w_neut|join(' ') }}">
+        <input type="hidden" name="w_neg" value="{{ inst.w_neg|join(' ') }}">
+        <input type="hidden" name="w_kill" value="{{ inst.w_kill|join(' ') }}">
+        <table class="table table-sm votetable" style="width: auto;">
+            <tr>
+                <th>Hint</th>
+                {% for p in perm %}<th class="rotate">
+                    <div><span class="">{{ cols[p][0] }}</span></div>
+                </th>{% endfor %}
+            </tr>
+            {% for h in inst.hints %}{% set hintloop = loop %}
+            <tr>
+                <td>
+                    <input type="text" name="h_{{ hintloop.index0 }}" value="{{ h.word }}" {% if h.word %}readonly{% endif %} placeholder="Custom hint" style="width: 10em;">
+                    <input type="hidden" name="s_{{ hintloop.index0 }}" value="{{ h.score }}">
+                </td>
+                {% for p in perm %}<td class="">
+                    <input type="checkbox" name="cb_{{ hintloop.index0 }}_{{ p }}"
+                    value="1" class="votebox">
+                </td>{% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        <div class="form-group row">
+            <input type="text" class="form-control col-sm-3" name="nick" placeholder="Nick (optional)" value="{{ nick }}">
+            <button type="submit" name="b_vote" class="btn btn-primary">Vote</button>
+        </div>
+    </form>
+    <hr>
+    <a href="https://github.com/gavento/codenamer">[github]</a>
+{% endblock %}
